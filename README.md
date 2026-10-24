@@ -41,9 +41,12 @@ cd src/LeaveApproval.Api
 dotnet run
 ```
 
+- **Web 测试页面**：<http://localhost:5000/> （内置单页前端，登录页可点击账号一键填入）
 - Swagger：<http://localhost:5000/swagger>
 - 健康检查：<http://localhost:5000/health>
 - 日志文件：`src/LeaveApproval.Api/logs/leaveapproval-*.log`
+
+前端为 API 同源托管的无构建单页应用（`src/LeaveApproval.Api/wwwroot/index.html`），覆盖：登录（JWT）、提交请假（多附件）、我的请假与单据详情（任务快照/操作记录时间线/附件下载）、我的待办（同意/驳回）、流程配置管理（Admin）、模拟邮件查看（Admin）。API 默认开放跨域以便页面单独托管（Bearer Token 鉴权，不依赖 Cookie）；生产环境如需收紧，删除 `Program.cs` 中的 `AddCors/UseCors` 即可。
 
 ### 1.3 测试账号（仅开发/测试环境，生产环境禁止使用默认密码）
 
@@ -61,6 +64,8 @@ dotnet run
 ---
 
 ## 2. 端到端测试步骤
+
+> 最快方式：直接打开 **<http://localhost:5000/>** 的 Web 页面——登录页点击账号即可填入，按"提交请假 → 退出 → 换审批人登录 → 我的待办 → 同意/驳回"操作即可走完整个流程。以下为 Swagger/curl 方式。
 
 1. 打开 Swagger，`POST /api/auth/login` 用 `zhangsan/Employee@123` 登录，点击右上角 **Authorize** 填入返回的 `accessToken`。
 2. `POST /api/leave-requests`（multipart/form-data）：字段 `LeaveType=Annual`、`StartTime`、`EndTime`、`Reason`、可选多文件字段 `Attachments`。返回 `201` 与单号 `LR...`。

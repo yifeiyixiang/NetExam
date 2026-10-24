@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>请假审批系统</title>
+<style>
+  :root {
+    --primary: #2563eb; --primary-dark: #1d4ed8; --bg: #f1f5f9; --card: #ffffff;
+    --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
+    --green: #16a34a; --red: #dc2626; --orange: #d97706; --gray: #6b7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+  header { background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 17px; font-weight: 600; }
+  header .spacer { flex: 1; }
+  .user-chip { color: var(--muted); }
+  .user-chip b { color: var(--text); }
+  button { cursor: pointer; border: 1px solid transparent; border-radius: 6px; padding: 6px 14px; font-size: 13px; background: var(--primary); color: #fff; }
+  button:hover { background: var(--primary-dark); }
+  button.ghost { background: #fff; color: var(--text); border-color: var(--border); }
+  button.ghost:hover { background: var(--bg); }
+  button.green { background: var(--green); } button.green:hover { background: #15803d; }
+  button.red { background: var(--red); } button.red:hover { background: #b91c1c; }
+  button.danger-ghost { background: #fff; color: var(--red); border-color: #fecaca; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  input, select, textarea {
+    width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: inherit; background: #fff;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid #bfdbfe; border-color: var(--primary); }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .field { margin-bottom: 14px; }
+  main { max-width: 1080px; margin: 20px auto; padding: 0 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .login-wrap { min-height: calc(100vh - 60px); display: flex; align-items: center; justify-content: center; }
+  .login-card { width: 380px; }
+  .login-card h2 { margin-bottom: 6px; font-size: 18px; }
+  .login-card .hint { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .accounts { margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 10px; font-size: 12px; color: var(--muted); line-height: 1.9; }
+  .accounts code { background: var(--bg); padding: 1px 5px; border-radius: 4px; color: var(--text); cursor: pointer; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 6px; }
+  .tabs button { background: transparent; color: var(--muted); flex: 1; }
+  .tabs button.active { background: var(--primary); color: #fff; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; white-space: nowrap; }
+  tr:hover td { background: #f8fafc; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+  .b-pending { background: #fef3c7; color: #92400e; }
+  .b-approved { background: #dcfce7; color: #166534; }
+  .b-rejected { background: #fee2e2; color: #991b1b; }
+  .b-upcoming { background: #e5e7eb; color: #374151; }
+  .b-skipped { background: #e5e7eb; color: #6b7280; }
+  .b-inactive { background: #f3f4f6; color: #6b7280; }
+  .b-active { background: #dcfce7; color: #166534; }
+  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .toolbar .spacer { flex: 1; }
+  .muted { color: var(--muted); }
+  .empty { text-align: center; color: var(--muted); padding: 30px 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  dialog {
+    border: none; border-radius: 12px; padding: 0; width: min(760px, 94vw); max-height: 88vh;
+  }
+  dialog::backdrop { background: rgba(15, 23, 42, .45); }
+  .dlg-body { padding: 22px; max-height: 88vh; overflow: auto; }
+  .dlg-head { display: flex; align-items: center; margin-bottom: 14px; }
+  .dlg-head h3 { font-size: 16px; }
+  .dlg-head .spacer { flex: 1; }
+  .kv { display: grid; grid-template-columns: 120px 1fr 120px 1fr; gap: 8px 10px; font-size: 13px; margin-bottom: 16px; }
+  .kv .k { color: var(--muted); }
+  .kv .v { grid-column: span 1; }
+  .kv .wide { grid-column: 2 / span 3; }
+  section h4 { font-size: 13px; color: var(--muted); margin: 16px 0 8px; font-weight: 600; }
+  .timeline { border-left: 2px solid var(--border); margin-left: 6px; padding-left: 16px; }
+  .timeline .item { position: relative; padding-bottom: 12px; }
+  .timeline .item::before { content: ""; position: absolute; left: -22px; top: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+  .node-row { display: grid; grid-template-columns: 64px 1fr 150px 120px 90px 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .toast {
+    position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 99;
+    background: #0f172a; color: #fff; border-radius: 8px; padding: 10px 18px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  }
+  .toast.err { background: var(--red); }
+  #errorBox { display: none; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 13px; }
+  #errorBox ul { margin: 6px 0 0 18px; }
+  .paging { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--muted); }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .file-list { font-size: 12px; color: var(--muted); }
+  .mono { font-family: Consolas, monospace; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📋 请假审批系统</h1>
+  <span class="spacer"></span>
+  <span id="userChip" class="user-chip" style="display:none"></span>
+  <button id="logoutBtn" class="ghost" style="display:none" onclick="logout()">退出登录</button>
+</header>
+
+<!-- 登录 -->
+<div id="loginView" class="login-wrap">
+  <div class="card login-card">
+    <h2>登录</h2>
+    <p class="hint">使用测试账号登录后体验完整审批流程</p>
+    <div id="errorBox"></div>
+    <div class="field"><label>用户名</label><input id="loginUsername" placeholder="zhangsan"></div>
+    <div class="field"><label>密码</label><input id="loginPassword" type="password" placeholder="Employee@123"></div>
+    <button style="width:100%" onclick="login()">登 录</button>
+    <div class="accounts">
+      测试账号（点击填入）：<br>
+      员工：<code data-u="zhangsan" data-p="Employee@123">zhangsan / Employee@123</code><br>
+      直属领导：<code data-u="lisi" data-p="Manager@123">lisi / Manager@123</code><br>
+      部门经理：<code data-u="wangwu" data-p="Manager@123">wangwu / Manager@123</code><br>
+      管理员：<code data-u="admin" data-p="Admin@123">admin / Admin@123</code>
+    </div>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<main id="appView" style="display:none">
+  <div class="tabs">
+    <button data-view="submit" onclick="showView('submit')">提交请假</button>
+    <button data-view="my" onclick="showView('my')">我的请假</button>
+    <button data-view="pending" onclick="showView('pending')">我的待办</button>
+    <button data-view="configs" id="tabConfigs" style="display:none" onclick="showView('configs')">流程配置</button>
+    <button data-view="emails" id="tabEmails" style="display:none" onclick="showView('emails')">模拟邮件</button>
+  </div>
+  <div id="errorBox"></div>
+
+  <!-- 提交请假 -->
+  <div id="view-submit" class="card" style="display:none">
+    <h3 style="margin-bottom:14px">提交请假申请</h3>
+    <div class="grid2">
+      <div class="field"><label>请假类型</label>
+        <select id="fLeaveType">
+          <option value="Annual">年假</option><option value="Sick">病假</option>
+          <option value="Personal">事假</option><option value="Marriage">婚假</option>
+          <option value="Bereavement">丧假</option><option value="Compensatory">调休</option>
+          <option value="Other">其他</option>
+        </select>
+      </div>
+      <div class="field"><label>附件（可选，可多选；≤10MB/个，≤5 个，jpg/png/pdf/doc/xls/txt/zip）</label>
+        <input id="fFiles" type="file" multiple>
+      </div>
+      <div class="field"><label>开始时间</label><input id="fStart" type="datetime-local"></div>
+      <div class="field"><label>结束时间（须晚于开始时间）</label><input id="fEnd" type="datetime-local"></div>
+    </div>
+    <div class="field"><label>请假原因（必填，≤2000 字）</label>
+      <textarea id="fReason" rows="4" placeholder="请填写请假事由"></textarea>
+    </div>
+    <button class="green" onclick="submitLeave()">提交申请</button>
+    <span class="muted" style="margin-left:10px">提交后将按当前流程配置生成审批任务并通知第一节点审批人（见"模拟邮件"）</span>
+  </div>
+
+  <!-- 我的请假 -->
+  <div id="view-my" style="display:none">
+    <div class="card">
+      <div class="toolbar"><h3>我的请假申请</h3><span class="spacer"></span>
+        <button class="ghost" onclick="loadMyLeaves()">刷新</button></div>
+      <table><thead><tr>
+        <th>单号</th><th>类型</th><th>状态</th><th>时长(h)</th><th>开始 ~ 结束</th><th>当前节点</th><th>提交时间</th><th></th>
+      </tr></thead><tbody id="myLeavesBody"></tbody></table>
+      <div class="paging" id="myPaging"></div>
+    </div>
+  </div>
+
+  <!-- 我的待办 -->
+  <div id="view-pending" style="display:none">
+    <div class="card">
+      <div class="toolbar"><h3>我的待审批</h3><span class="spacer"></span>
+        <button class="ghost" onclick="loadPending()">刷新</button></div>
+      <table><thead><tr>
+        <th>单号</th><th>申请人</th><th>类型</th><th>时长(h)</th><th>开始 ~ 结束</th><th>事由</th><th>节点</th><th style="text-align:right">操作</th>
+      </tr></thead><tbody id="pendingBody"></tbody></table>
+      <div class="paging" id="pendingPaging"></div>
+    </div>
+  </div>
+
+  <!-- 流程配置 -->
+  <div id="view-configs" style="display:none">
+    <div class="card" style="margin-bottom:16px">
+      <div class="toolbar"><h3>创建流程配置</h3><span class="spacer"></span></div>
+      <div class="grid2">
+        <div class="field"><label>流程名称</label><input id="cfgName" placeholder="如：研发部请假审批流程"></div>
+        <div class="field"><label>适用部门 ID（留空 = 全局适用）</label><input id="cfgDept" type="number" placeholder="1 = 研发部"></div>
+      </div>
+      <div class="field">
+        <label>审批节点（节点1 起，顺序自动递增；任一审批人通过即流转到下一节点）</label>
+        <div id="cfgNodes"></div>
+        <button class="ghost" onclick="addNodeRow()">+ 添加节点</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;margin-bottom:14px">
+        <input type="checkbox" id="cfgActive" style="width:auto"> 创建后立即启用（同一适用范围仅允许一个启用中的配置）
+      </label>
+      <button class="green" onclick="createConfig()">创建配置</button>
+    </div>
+    <div class="card">
+      <div class="toolbar"><h3>流程配置列表</h3><span class="spacer"></span>
+        <button class="ghost" onclick="loadConfigs()">刷新</button></div>
+      <table><thead><tr>
+        <th>ID</th><th>名称</th><th>适用范围</th><th>版本</th><th>状态</th><th>节点</th><th style="text-align:right">操作</th>
+      </tr></thead><tbody id="configsBody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- 模拟邮件 -->
+  <div id="view-emails" style="display:none">
+    <div class="card">
+      <div class="toolbar"><h3>模拟邮件（Outbox 已发送）</h3><span class="spacer"></span>
+        <button class="ghost" onclick="loadEmails()">刷新</button></div>
+      <div class="muted" style="margin-bottom:10px">邮件由后台进程每 3 秒轮询 Outbox 发送，失败自动退避重试。</div>
+      <table><thead><tr><th>收件人</th><th>主题</th><th>时间</th></tr></thead><tbody id="emailsBody"></tbody></table>
+    </div>
+  </div>
+</main>
+
+<!-- 请假单详情 -->
+<dialog id="detailDlg">
+  <div class="dlg-body" id="detailBody"></div>
+</dialog>
+
+<!-- 审批意见 -->
+<dialog id="approveDlg" style="width:420px">
+  <div class="dlg-body">
+    <div class="dlg-head"><h3>审批同意（意见可选）</h3><span class="spacer"></span>
+      <button class="ghost" onclick="approveDlg.close()">取消</button></div>
+    <div class="field"><textarea id="approveComment" rows="3" placeholder="审批意见（选填）"></textarea></div>
+    <button class="green" style="width:100%" onclick="confirmApprove()">确认同意</button>
+  </div>
+</dialog>
+
+<!-- 驳回意见 -->
+<dialog id="rejectDlg" style="width:420px">
+  <div class="dlg-body">
+    <div class="dlg-head"><h3>填写驳回意见（必填）</h3><span class="spacer"></span>
+      <button class="ghost" onclick="rejectDlg.close()">取消</button></div>
+    <div class="field"><textarea id="rejectComment" rows="4" placeholder="请填写驳回原因"></textarea></div>
+    <button class="red" style="width:100%" onclick="confirmReject()">确认驳回</button>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+const API_BASE = localStorage.getItem('apiBase') || '';
+let token = localStorage.getItem('token') || '';
+let me = JSON.parse(localStorage.getItem('me') || 'null');
+let rejectTargetId = null;
+let approveTargetId = null;
+let myPage = 1, pendingPage = 1;
+
+const TYPE_NAMES = { Annual: '年假', Sick: '病假', Personal: '事假', Marriage: '婚假', Bereavement: '丧假', Compensatory: '调休', Other: '其他' };
+const STATUS_BADGES = { Draft: ['草稿','b-upcoming'], PendingApproval: ['审批中','b-pending'], Approved: ['已通过','b-approved'], Rejected: ['已驳回','b-rejected'], Cancelled: ['已取消','b-inactive'] };
+const TASK_BADGES = { Upcoming: ['未开始','b-upcoming'], Pending: ['待审批','b-pending'], Approved: ['已通过','b-approved'], Rejected: ['已驳回','b-rejected'], Skipped: ['已跳过','b-skipped'] };
+const ACTION_NAMES = { Submit: '提交申请', Approve: '审批通过', Reject: '审批驳回' };
+const APPROVER_TYPES = { 1: '指定用户', 2: '直属领导', 3: '部门经理', SpecificUser: '指定用户', DirectLeader: '直属领导', DepartmentManager: '部门经理' };
+
+/* ---------- 基础 ---------- */
+function toast(msg, isErr = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast' + (isErr ? ' err' : '');
+  t.style.display = 'block';
+  clearTimeout(t._timer); t._timer = setTimeout(() => t.style.display = 'none', isErr ? 4200 : 2600);
+}
+function showError(err) {
+  const box = document.getElementById('errorBox');
+  let html = '<div style="font-weight:600">' + esc(err.message || '请求失败') + '</div>';
+  if (err.errors && err.errors.length) {
+    html += '<ul>' + err.errors.map(e => '<li>' + esc(e.field || '') + '：' + esc(e.message || '') + '</li>').join('') + '</ul>';
+  }
+  box.innerHTML = html; box.style.display = 'block';
+  clearTimeout(box._timer); box._timer = setTimeout(() => box.style.display = 'none', 6000);
+  if (!isLoginVisible()) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function clearError() { const b = document.getElementById('errorBox'); b.style.display = 'none'; }
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtTime(s) { return s ? new Date(s).toLocaleString('zh-CN', { hour12: false }) : '-'; }
+function badge(map, key) {
+  const [text, cls] = map[key] || [key, 'b-inactive'];
+  return `<span class="badge ${cls}">${esc(text)}</span>`;
+}
+async function api(path, opts = {}) {
+  const headers = { ...(opts.headers || {}) };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (opts.body && !(opts.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+  const res = await fetch(API_BASE + path, { ...opts, headers });
+  if (res.status === 401) { logout(); throw { message: '未登录或登录已过期，请重新登录' }; }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }));
+    throw err;
+  }
+  if (res.status === 204) return null;
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('json') ? res.json() : res.text();
+}
+
+/* ---------- 登录态 ---------- */
+function isLoginVisible() { return document.getElementById('loginView').style.display !== 'none'; }
+function renderAuthState() {
+  const logged = !!token && !!me;
+  document.getElementById('loginView').style.display = logged ? 'none' : 'flex';
+  document.getElementById('appView').style.display = logged ? 'block' : 'none';
+  document.getElementById('userChip').style.display = logged ? 'inline' : 'none';
+  document.getElementById('logoutBtn').style.display = logged ? 'inline-block' : 'none';
+  if (logged) {
+    const role = { Admin: '管理员', Manager: '经理', Employee: '员工' }[me.role] || me.role;
+    document.getElementById('userChip').innerHTML =
+      `<b>${esc(me.displayName)}</b>（${esc(me.username)}）· ${esc(role)} · ${esc(me.departmentName || '无部门')}`;
+    const isAdmin = me.role === 'Admin';
+    document.getElementById('tabConfigs').style.display = isAdmin ? '' : 'none';
+    document.getElementById('tabEmails').style.display = isAdmin ? '' : 'none';
+    if (!isAdmin && (currentView === 'configs' || currentView === 'emails')) showView('my');
+  }
+}
+async function login() {
+  clearError();
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!username || !password) return showError({ message: '请输入用户名和密码' });
+  try {
+    const body = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+    token = body.accessToken; me = body.user;
+    localStorage.setItem('token', token); localStorage.setItem('me', JSON.stringify(me));
+    toast('登录成功，欢迎 ' + me.displayName);
+    renderAuthState(); showView('my');
+  } catch (e) { showError(e); }
+}
+function logout() {
+  token = ''; me = null;
+  localStorage.removeItem('token'); localStorage.removeItem('me');
+  renderAuthState();
+}
+document.querySelectorAll('.accounts code').forEach(c =>
+  c.addEventListener('click', () => {
+    document.getElementById('loginUsername').value = c.dataset.u;
+    document.getElementById('loginPassword').value = c.dataset.p;
+  }));
+document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+document.getElementById('loginUsername').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+/* ---------- 视图切换 ---------- */
+let currentView = 'my';
+function showView(name) {
+  currentView = name;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  ['submit', 'my', 'pending', 'configs', 'emails'].forEach(v =>
+    document.getElementById('view-' + v).style.display = v === name ? (v === 'submit' ? 'block' : 'block') : 'none');
+  clearError();
+  if (name === 'my') loadMyLeaves();
+  if (name === 'pending') loadPending();
+  if (name === 'configs') loadConfigs();
+  if (name === 'emails') loadEmails();
+  if (name === 'submit') {
+    const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('fStart').value = now.toISOString().slice(0, 16);
+    const end = new Date(now.getTime() + 8 * 3600e3);
+    document.getElementById('fEnd').value = end.toISOString().slice(0, 16);
+  }
+}
+
+/* ---------- 提交请假 ---------- */
+async function submitLeave() {
+  clearError();
+  const start = document.getElementById('fStart').value;
+  const end = document.getElementById('fEnd').value;
+  const reason = document.getElementById('fReason').value.trim();
+  const files = document.getElementById('fFiles').files;
+  if (!start || !end || !reason) return showError({ message: '请填写开始时间、结束时间和请假原因' });
+  const fd = new FormData();
+  fd.append('LeaveType', document.getElementById('fLeaveType').value);
+  fd.append('StartTime', start.length === 16 ? start + ':00' : start);
+  fd.append('EndTime', end.length === 16 ? end + ':00' : end);
+  fd.append('Reason', reason);
+  for (const f of files) fd.append('Attachments', f, f.name);
+  try {
+    const body = await api('/api/leave-requests', { method: 'POST', body: fd });
+    toast('提交成功：' + body.leaveNo + '，当前节点「' + body.currentNodeName + '」');
+    document.getElementById('fReason').value = '';
+    document.getElementById('fFiles').value = '';
+    showView('my');
+  } catch (e) { showError(e); }
+}
+
+/* ---------- 我的请假 ---------- */
+async function loadMyLeaves() {
+  clearError();
+  try {
+    const data = await api(`/api/leave-requests/my?page=${myPage}&pageSize=10`);
+    const tbody = document.getElementById('myLeavesBody');
+    tbody.innerHTML = data.items.length === 0
+      ? '<tr><td colspan="8" class="empty">暂无申请，去"提交请假"发起第一笔吧</td></tr>'
+      : data.items.map(i => `<tr>
+          <td class="mono">${esc(i.leaveNo)}</td>
+          <td>${esc(TYPE_NAMES[i.leaveType] || i.leaveType)}</td>
+          <td>${badge(STATUS_BADGES, i.status)}</td>
+          <td>${i.durationHours}</td>
+          <td>${fmtTime(i.startTime).slice(0, 16)} ~ ${fmtTime(i.endTime).slice(0, 16)}</td>
+          <td>${i.status === 'PendingApproval' ? esc(i.currentNodeName || '-') : '-'}</td>
+          <td>${fmtTime(i.createdAt)}</td>
+          <td><button class="ghost" onclick="openDetail(${i.id})">查看</button></td>
+        </tr>`).join('');
+    document.getElementById('myPaging').innerHTML = pagingHtml(data, myPage, 'my');
+  } catch (e) { showError(e); }
+}
+function pagingHtml(data, page, kind) {
+  const total = data.totalCount, pages = Math.max(1, Math.ceil(total / data.pageSize));
+  return `共 ${total} 条 · 第 ${page}/${pages} 页
+    <button class="ghost" ${page <= 1 ? 'disabled' : ''} onclick="${kind}Go(${page - 1})">上一页</button>
+    <button class="ghost" ${page >= pages ? 'disabled' : ''} onclick="${kind}Go(${page + 1})">下一页</button>`;
+}
+function myGo(p) { myPage = p; loadMyLeaves(); }
+function pendingGo(p) { pendingPage = p; loadPending(); }
+
+/* ---------- 我的待办 ---------- */
+async function loadPending() {
+  clearError();
+  try {
+    const data = await api(`/api/approvals/pending?page=${pendingPage}&pageSize=10`);
+    const tbody = document.getElementById('pendingBody');
+    tbody.innerHTML = data.items.length === 0
+      ? '<tr><td colspan="8" class="empty">暂无待审批任务 🎉</td></tr>'
+      : data.items.map(i => `<tr>
+          <td class="mono">${esc(i.leaveNo)}</td>
+          <td>${esc(i.applicantName)}</td>
+          <td>${esc(TYPE_NAMES[i.leaveType] || i.leaveType)}</td>
+          <td>${i.durationHours}</td>
+          <td>${fmtTime(i.startTime).slice(0, 16)} ~ ${fmtTime(i.endTime).slice(0, 16)}</td>
+          <td style="max-width:180px" title="${esc(i.reason)}">${esc(i.reason.length > 16 ? i.reason.slice(0, 16) + '…' : i.reason)}</td>
+          <td>${esc(i.nodeName)}（${i.nodeOrder}）</td>
+          <td><div class="row-actions">
+            <button class="green" onclick="openApprove(${i.leaveRequestId})">同意</button>
+            <button class="danger-ghost" onclick="openReject(${i.leaveRequestId})">驳回</button>
+            <button class="ghost" onclick="openDetail(${i.leaveRequestId})">详情</button>
+          </div></td>
+        </tr>`).join('');
+    document.getElementById('pendingPaging').innerHTML = pagingHtml(data, pendingPage, 'pending');
+  } catch (e) { showError(e); }
+}
+function openApprove(id) {
+  approveTargetId = id;
+  document.getElementById('approveComment').value = '';
+  document.getElementById('approveDlg').showModal();
+}
+async function confirmApprove() {
+  const comment = document.getElementById('approveComment').value.trim();
+  try {
+    const body = await api(`/api/leave-requests/${approveTargetId}/approve`, { method: 'POST', body: JSON.stringify({ comment }) });
+    document.getElementById('approveDlg').close();
+    toast(body.message || '审批成功');
+    if (currentView === 'pending') loadPending();
+    refreshDetailIfOpen(approveTargetId);
+  } catch (e) { showError(e); }
+}
+function openReject(id) {
+  rejectTargetId = id;
+  document.getElementById('rejectComment').value = '';
+  document.getElementById('rejectDlg').showModal();
+}
+async function confirmReject() {
+  const comment = document.getElementById('rejectComment').value.trim();
+  if (!comment) return toast('驳回意见必填', true);
+  try {
+    const body = await api(`/api/leave-requests/${rejectTargetId}/reject`, { method: 'POST', body: JSON.stringify({ comment }) });
+    document.getElementById('rejectDlg').close();
+    toast(body.message || '已驳回');
+    if (currentView === 'pending') loadPending();
+    refreshDetailIfOpen(rejectTargetId);
+  } catch (e) { showError(e); }
+}
+
+/* ---------- 详情 ---------- */
+let openDetailId = null;
+async function openDetail(id) {
+  try {
+    const d = await api(`/api/leave-requests/${id}`);
+    openDetailId = id;
+    const canAct = d.status === 'PendingApproval' && d.tasks.some(t => t.status === 'Pending' && t.approverUserId === me?.id);
+    document.getElementById('detailBody').innerHTML = `
+      <div class="dlg-head"><h3 class="mono">${esc(d.leaveNo)}</h3><span class="spacer"></span>${badge(STATUS_BADGES, d.status)}
+        <button class="ghost" style="margin-left:10px" onclick="document.getElementById('detailDlg').close()">关闭</button></div>
+      <div class="kv">
+        <span class="k">申请人</span><span>${esc(d.applicant?.displayName || '-')}（${esc(d.applicant?.username || '')}）</span>
+        <span class="k">部门</span><span>${esc(d.departmentName || '-')}</span>
+        <span class="k">类型</span><span>${esc(TYPE_NAMES[d.leaveType] || d.leaveType)}</span>
+        <span class="k">时长</span><span>${d.durationHours} 小时</span>
+        <span class="k">开始时间</span><span>${fmtTime(d.startTime)}</span>
+        <span class="k">结束时间</span><span>${fmtTime(d.endTime)}</span>
+        <span class="k">提交时间</span><span>${fmtTime(d.submittedAt)}</span>
+        <span class="k">完成时间</span><span>${fmtTime(d.completedAt)}</span>
+        <span class="k">流程版本</span><span>v${d.workflowVersion}</span>
+        <span class="k">当前节点</span><span>${d.status === 'PendingApproval' ? esc('第 ' + (d.currentNodeOrder ?? '-') + ' 节点 ' + (d.currentNodeName || '')) : '-'}</span>
+        <span class="k">请假原因</span><span class="wide">${esc(d.reason)}</span>
+      </div>
+      ${canAct ? `<div class="row-actions" style="margin-bottom:10px">
+        <button class="green" onclick="openApprove(${d.id})">同意</button>
+        <button class="danger-ghost" onclick="openReject(${d.id})">驳回</button></div>` : ''}
+      <section><h4>审批任务（提交时冻结的审批人快照）</h4>
+        <table><thead><tr><th>节点</th><th>名称</th><th>审批人</th><th>状态</th><th>处理时间</th></tr></thead><tbody>
+        ${d.tasks.map(t => `<tr><td>第 ${t.nodeOrder} 节点</td><td>${esc(t.nodeName)}</td>
+          <td>${esc(t.approverName || ('用户 #' + t.approverUserId))}</td>
+          <td>${badge(TASK_BADGES, t.status)}</td><td>${fmtTime(t.completedAt)}</td></tr>`).join('')}
+        </tbody></table></section>
+      <section><h4>操作记录</h4>
+        <div class="timeline">
+        ${d.records.map(r => `<div class="item">
+          <b>${esc(ACTION_NAMES[r.action] || r.action)}</b> · ${esc(r.operatorName || '-')}
+          <span class="muted">${fmtTime(r.createdAt)}　${r.fromStatus || '—'} → ${r.toStatus || '—'}</span>
+          ${r.comment ? `<div class="muted">意见：${esc(r.comment)}</div>` : ''}
+        </div>`).join('') || '<span class="muted">无</span>'}
+        </div></section>
+      <section><h4>附件</h4>
+        ${d.attachments.length === 0 ? '<span class="muted">无附件</span>' :
+          '<ul>' + d.attachments.map(a => `<li>
+            <a href="javascript:void(0)" onclick="downloadAttachment(${d.id}, ${a.id}, '${esc(a.originalFileName).replace(/'/g, "\\'")}')">${esc(a.originalFileName)}</a>
+            <span class="muted">（${(a.size / 1024).toFixed(1)} KB · ${esc(a.contentType)}）</span></li>`).join('') + '</ul>'}
+      </section>`;
+    document.getElementById('detailDlg').showModal();
+  } catch (e) { showError(e); }
+}
+function refreshDetailIfOpen(id) { if (openDetailId === id && document.getElementById('detailDlg').open) openDetail(id); }
+async function downloadAttachment(leaveId, attachmentId, filename) {
+  try {
+    const res = await fetch(API_BASE + `/api/leave-requests/${leaveId}/attachments/${attachmentId}`,
+      { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw { message: '下载失败：HTTP ' + res.status };
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) { showError(e); }
+}
+
+/* ---------- 流程配置（Admin） ---------- */
+function addNodeRow() {
+  const wrap = document.getElementById('cfgNodes');
+  const order = wrap.children.length + 1;
+  const row = document.createElement('div');
+  row.className = 'node-row';
+  row.innerHTML = `
+    <input value="${order}" title="节点顺序" data-role="order" type="number" min="1">
+    <input placeholder="节点名称，如：直属领导审批" data-role="name">
+    <select data-role="type" onchange="this.closest('.node-row').querySelector('[data-role=uid]').style.display = this.value === '1' ? '' : 'none'">
+      <option value="2">直属领导</option><option value="3">部门经理</option><option value="1">指定用户</option>
+    </select>
+    <input placeholder="用户 ID（指定用户时必填）" data-role="uid" type="number" style="display:none">
+    <label style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" checked data-role="req" style="width:auto">必经</label>
+    <button class="ghost" onclick="this.closest('.node-row').remove()">✕</button>`;
+  wrap.appendChild(row);
+}
+async function loadConfigs() {
+  clearError();
+  try {
+    const list = await api('/api/workflow-configs');
+    document.getElementById('configsBody').innerHTML = list.map(c => `<tr>
+      <td>${c.id}</td><td>${esc(c.name)}</td>
+      <td>${c.departmentId ? esc(c.departmentName || ('部门 #' + c.departmentId)) : '全局'}</td>
+      <td>v${c.version}</td>
+      <td>${c.isActive ? '<span class="badge b-active">启用中</span>' : '<span class="badge b-inactive">已停用</span>'}</td>
+      <td>${c.nodes.map(n => `第${n.nodeOrder}节点 ${esc(n.nodeName)}（${APPROVER_TYPES[n.approverType]}${n.approverUserName ? '·' + esc(n.approverUserName) : ''}）`).join('<br>')}</td>
+      <td><div class="row-actions">
+        ${c.isActive
+          ? `<button class="ghost" onclick="toggleConfig(${c.id}, false)">停用</button>`
+          : `<button class="green" onclick="toggleConfig(${c.id}, true)">启用</button>`}
+        <button class="ghost" onclick="renameConfig(${c.id}, '${esc(c.name).replace(/'/g, "\\'")}')">改名</button>
+      </div></td>
+    </tr>`).join('') || '<tr><td colspan="7" class="empty">暂无配置</td></tr>';
+  } catch (e) { showError(e); }
+}
+async function createConfig() {
+  clearError();
+  const name = document.getElementById('cfgName').value.trim();
+  const deptRaw = document.getElementById('cfgDept').value.trim();
+  const rows = [...document.getElementById('cfgNodes').children];
+  if (!name) return showError({ message: '请填写流程名称' });
+  if (rows.length === 0) return showError({ message: '至少添加一个审批节点' });
+  const nodes = rows.map((r, i) => {
+    const get = k => r.querySelector(`[data-role=${k}]`);
+    return {
+      nodeOrder: parseInt(get('order').value || (i + 1)),
+      nodeName: get('name').value.trim(),
+      approverType: parseInt(get('type').value),
+      approverUserId: get('uid').value ? parseInt(get('uid').value) : null,
+      isRequired: get('req').checked
+    };
+  });
+  const body = {
+    name,
+    departmentId: deptRaw ? parseInt(deptRaw) : null,
+    isActive: document.getElementById('cfgActive').checked,
+    nodes
+  };
+  try {
+    await api('/api/workflow-configs', { method: 'POST', body: JSON.stringify(body) });
+    toast('流程配置创建成功');
+    document.getElementById('cfgName').value = ''; document.getElementById('cfgDept').value = '';
+    document.getElementById('cfgNodes').innerHTML = ''; addNodeRow(); addNodeRow();
+    document.getElementById('cfgActive').checked = false;
+    loadConfigs();
+  } catch (e) { showError(e); }
+}
+async function toggleConfig(id, isActive) {
+  try {
+    await api('/api/workflow-configs/' + id, { method: 'PUT', body: JSON.stringify({ isActive }) });
+    toast(isActive ? '已启用' : '已停用');
+    loadConfigs();
+  } catch (e) { showError(e); }
+}
+async function renameConfig(id, oldName) {
+  const name = prompt('新的流程名称：', oldName);
+  if (!name || name === oldName) return;
+  try {
+    await api('/api/workflow-configs/' + id, { method: 'PUT', body: JSON.stringify({ name }) });
+    toast('名称已更新');
+    loadConfigs();
+  } catch (e) { showError(e); }
+}
+
+/* ---------- 模拟邮件（Admin） ---------- */
+async function loadEmails() {
+  clearError();
+  try {
+    const data = await api('/api/dev/emails?limit=100');
+    document.getElementById('emailsBody').innerHTML = data.items.length === 0
+      ? '<tr><td colspan="3" class="empty">暂无邮件，发起一笔请假后等 3 秒再刷新</td></tr>'
+      : data.items.map(e => `<tr>
+          <td>${esc(e.to)}</td>
+          <td style="max-width:420px" title="${esc(e.body)}">${esc(e.subject)}</td>
+          <td>${fmtTime(e.receivedAt)}</td>
+        </tr>`).join('');
+  } catch (e) { showError(e); }
+}
+
+/* ---------- 初始化 ---------- */
+addNodeRow(); addNodeRow();
+renderAuthState();
+if (token && me) showView('my');
+</script>
+</body>
+</html>

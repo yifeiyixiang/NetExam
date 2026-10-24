@@ -42,6 +42,10 @@ try
         .AddSwaggerWithJwt()
         .AddHealthChecks();
 
+    // 前端页面与 API 同源部署；允许跨域便于页面单独托管（使用 Bearer Token，不涉及 Cookie）
+    builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
+        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+
     var app = builder.Build();
 
     app.UseMiddleware<CorrelationIdMiddleware>();
@@ -58,6 +62,11 @@ try
             : httpContext.Response.StatusCode >= 500 ? LogEventLevel.Error : LogEventLevel.Information;
     });
     app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+    // 托管 wwwroot/index.html 前端页面（访问 http://localhost:5000/ 即可测试）
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+    app.UseCors();
 
     // Swagger：默认全环境开放以便验收，生产环境可通过 Swagger:Enabled=false 关闭
     if (app.Configuration.GetValue<bool>("Swagger:Enabled", true))
