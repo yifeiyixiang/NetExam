@@ -1,0 +1,59 @@
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: leaveapproval-mysql
+    restart: unless-stopped
+    ports:
+      - "10010:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: local
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:5
+    container_name: leaveapproval-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+    volumes:
+      - redis-data:/data
+
+  # 应用镜像需自行构建（dotnet publish 产物），本地开发建议直接 dotnet run，默认注释。
+  # leaveapproval-api:
+  #   image: leaveapproval-api
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "5000:5000"
+  #   environment:
+  #     ASPNETCORE_ENVIRONMENT: Production
+  #     ASPNETCORE_URLS: http://+:5000
+  #     ConnectionStrings__Default: Server=mysql;Port=3306;Database=local;User=root;Password=root;charset=utf8mb4
+  #     Redis__ConnectionString: redis:6379
+  #     Jwt__SecretKey: ChangeMe_Production_Jwt_Secret_Key_At_Least_32_Chars
+  #     Database__InitializeOnStartup: "true"
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
+
+volumes:
+  mysql-data:
+  redis-data:
