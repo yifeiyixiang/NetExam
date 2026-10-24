@@ -1,0 +1,38 @@
+# .NET 构建产物
+bin/
+obj/
+out/
+publish/
+artifacts/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# 测试结果
+TestResults/
+*.trx
+coverage/
+*.coverage
+
+# 日志
+logs/
+*.log
+
+# 运行时生成的上传附件
+uploads/
+
+# 本地敏感配置（连接字符串/密钥如有本地覆盖）
+appsettings.*.local.json
+secrets.json
+*.pfx
+*.key
+
+# 操作系统
+.DS_Store
+Thumbs.db
