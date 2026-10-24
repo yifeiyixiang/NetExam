@@ -1,0 +1,17 @@
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\obj\Debug\net8.0\LeaveApproval.Infrastructure.csproj.AssemblyReference.cache
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\obj\Debug\net8.0\LeaveApproval.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\obj\Debug\net8.0\LeaveApproval.Infrastructure.AssemblyInfoInputs.cache
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\obj\Debug\net8.0\LeaveApproval.Infrastructure.AssemblyInfo.cs
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\obj\Debug\net8.0\LeaveApproval.Infrastructure.csproj.CoreCompileInputs.cache
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\bin\Debug\net8.0\LeaveApproval.Infrastructure.deps.json
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\bin\Debug\net8.0\LeaveApproval.Infrastructure.dll
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\bin\Debug\net8.0\LeaveApproval.Infrastructure.pdb
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\bin\Debug\net8.0\LeaveApproval.Application.dll
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\bin\Debug\net8.0\LeaveApproval.Domain.dll
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\bin\Debug\net8.0\LeaveApproval.Domain.pdb
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\bin\Debug\net8.0\LeaveApproval.Application.pdb
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\obj\Debug\net8.0\LeaveApp.0F1D46FB.Up2Date
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\obj\Debug\net8.0\LeaveApproval.Infrastructure.dll
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\obj\Debug\net8.0\refint\LeaveApproval.Infrastructure.dll
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\obj\Debug\net8.0\LeaveApproval.Infrastructure.pdb
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Infrastructure\obj\Debug\net8.0\ref\LeaveApproval.Infrastructure.dll
