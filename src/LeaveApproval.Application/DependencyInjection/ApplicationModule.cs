@@ -40,7 +40,9 @@ public class ApplicationModule : Module
             .InstancePerDependency();
 
         // AutoMapper：独立 Profile
-        builder.Register(ctx => new MapperConfiguration(cfg => cfg.AddMaps(applicationAssembly)))
+        builder.Register(ctx => new MapperConfiguration(
+                cfg => cfg.AddMaps(applicationAssembly),
+                Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance))
             .AsSelf()
             .SingleInstance();
         builder.Register(ctx => ctx.Resolve<MapperConfiguration>().CreateMapper())
