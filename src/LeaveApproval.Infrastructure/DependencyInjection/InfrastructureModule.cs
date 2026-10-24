@@ -93,6 +93,9 @@ public class InfrastructureModule : Module
         var jwtSettings = _configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
             ?? new JwtSettings();
         builder.RegisterInstance(jwtSettings).AsSelf().SingleInstance();
+        builder.RegisterInstance(Microsoft.Extensions.Options.Options.Create(jwtSettings))
+            .As<Microsoft.Extensions.Options.IOptions<JwtSettings>>()
+            .SingleInstance();
         builder.RegisterType<JwtTokenService>().As<ITokenService>().InstancePerLifetimeScope();
         builder.RegisterType<BCryptPasswordHasher>().As<IPasswordHasher>().SingleInstance();
     }

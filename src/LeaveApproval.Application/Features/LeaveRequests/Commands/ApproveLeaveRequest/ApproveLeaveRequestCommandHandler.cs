@@ -63,12 +63,17 @@ public class ApproveLeaveRequestCommandHandler : IRequestHandler<ApproveLeaveReq
         }
 
         // 对象级授权：必须是当前节点的有效审批人（Admin 也不能代替节点审批人）
-        var task = leave.Tasks.FirstOrDefault(t =>
-            t.ApproverUserId == userId && t.WorkflowNodeId == leave.CurrentNodeId);
+        var myTask = leave.Tasks.FirstOrDefault(t => t.ApproverUserId == userId);
+        var task = myTask != null && myTask.WorkflowNodeId == leave.CurrentNodeId ? myTask : null;
 
         if (task == null)
         {
-            throw new ForbiddenAccessException(leave.Tasks.Any(t => t.ApproverUserId == userId)
+            if (myTask != null && myTask.Status is ApprovalTaskStatus.Approved or ApprovalTaskStatus.Rejected)
+            {
+                throw new Domain.Exceptions.TaskAlreadyProcessedException("您已处理过该请假单的审批任务，请勿重复操作");
+            }
+
+            throw new ForbiddenAccessException(myTask != null
                 ? "您不是该请假单当前节点的审批人，无法越级审批"
                 : "您无权审批该请假单");
         }

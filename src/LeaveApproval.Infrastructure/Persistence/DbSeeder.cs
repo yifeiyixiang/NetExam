@@ -32,14 +32,18 @@ public static class DbSeeder
 
             var admin = NewUser("admin", "系统管理员", "admin@example.com", yanfa, null, Roles.Admin, "Admin@123", passwordHasher, now);
             var wangwu = NewUser("wangwu", "王五（研发部经理）", "wangwu@example.com", yanfa, null, Roles.Manager, "Manager@123", passwordHasher, now);
-            var lisi = NewUser("lisi", "李四（直属领导）", "lisi@example.com", yanfa, wangwu.Id, Roles.Manager, "Manager@123", passwordHasher, now);
-            var zhangsan = NewUser("zhangsan", "张三", "zhangsan@example.com", yanfa, lisi.Id, Roles.Employee, "Employee@123", passwordHasher, now);
+            var lisi = NewUser("lisi", "李四（直属领导）", "lisi@example.com", yanfa, null, Roles.Manager, "Manager@123", passwordHasher, now);
+            var zhangsan = NewUser("zhangsan", "张三", "zhangsan@example.com", yanfa, null, Roles.Employee, "Employee@123", passwordHasher, now);
             var sunqi = NewUser("sunqi", "孙七（市场部经理）", "sunqi@example.com", shichang, null, Roles.Manager, "Manager@123", passwordHasher, now);
-            var zhaoliu = NewUser("zhaoliu", "赵六", "zhaoliu@example.com", shichang, sunqi.Id, Roles.Employee, "Employee@123", passwordHasher, now);
+            var zhaoliu = NewUser("zhaoliu", "赵六", "zhaoliu@example.com", shichang, null, Roles.Employee, "Employee@123", passwordHasher, now);
 
             db.Users.AddRange(admin, wangwu, lisi, zhangsan, sunqi, zhaoliu);
             await db.SaveChangesAsync();
 
+            // 主键生成后再建立自引用关系（直属领导链）与部门经理
+            lisi.DirectManagerId = wangwu.Id;
+            zhangsan.DirectManagerId = lisi.Id;
+            zhaoliu.DirectManagerId = sunqi.Id;
             yanfa.ManagerUserId = wangwu.Id;
             shichang.ManagerUserId = sunqi.Id;
             await db.SaveChangesAsync();

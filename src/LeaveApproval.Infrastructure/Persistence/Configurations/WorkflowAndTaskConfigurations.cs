@@ -83,7 +83,7 @@ public class LeaveApprovalTaskConfiguration : IEntityTypeConfiguration<LeaveAppr
             .HasForeignKey(t => t.LeaveRequestId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<WorkflowNode>()
+        builder.HasOne(t => t.WorkflowNode)
             .WithMany()
             .HasForeignKey(t => t.WorkflowNodeId)
             .OnDelete(DeleteBehavior.Restrict);

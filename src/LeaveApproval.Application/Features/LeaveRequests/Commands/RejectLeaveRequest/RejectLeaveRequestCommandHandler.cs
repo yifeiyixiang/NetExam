@@ -61,12 +61,17 @@ public class RejectLeaveRequestCommandHandler : IRequestHandler<RejectLeaveReque
             throw new Domain.Exceptions.InvalidLeaveStateException($"请假单当前状态为 {leave.Status}，无法执行驳回");
         }
 
-        var task = leave.Tasks.FirstOrDefault(t =>
-            t.ApproverUserId == userId && t.WorkflowNodeId == leave.CurrentNodeId);
+        var myTask = leave.Tasks.FirstOrDefault(t => t.ApproverUserId == userId);
+        var task = myTask != null && myTask.WorkflowNodeId == leave.CurrentNodeId ? myTask : null;
 
         if (task == null)
         {
-            throw new ForbiddenAccessException(leave.Tasks.Any(t => t.ApproverUserId == userId)
+            if (myTask != null && myTask.Status is ApprovalTaskStatus.Approved or ApprovalTaskStatus.Rejected)
+            {
+                throw new Domain.Exceptions.TaskAlreadyProcessedException("您已处理过该请假单的审批任务，请勿重复操作");
+            }
+
+            throw new ForbiddenAccessException(myTask != null
                 ? "您不是该请假单当前节点的审批人，无法越级驳回"
                 : "您无权驳回该请假单");
         }
