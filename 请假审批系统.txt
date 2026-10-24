@@ -1,0 +1,1249 @@
+项目开发任务：基于 .NET 8 + CQRS + MediatR 的请假审批系统
+
+一、你的角色
+
+你是一名具有多年企业级 .NET 后端开发经验的高级工程师，熟悉 C#、ASP.NET Core 8、EF Core、mysql、Redis、MediatR、Autofac、FluentValidation、AutoMapper、JWT、Serilog、Swagger、Linux 和 Windows 部署。
+
+请你以真实企业项目的开发标准，独立设计并实现一个完整、可运行、可测试、易于维护的请假审批系统。
+
+这是一项初级 .NET 开发工程师的技术测试。项目不仅需要实现业务功能，还需要体现良好的分层架构、设计模式、依赖注入、异常处理、缓存策略、日志规范、权限控制和工程化能力。
+
+不要只输出示例代码、伪代码或设计方案。请实际创建项目文件，编写完整代码，并确保项目能够构建和运行。
+
+如果你具备终端和文件操作能力，请直接在当前工作区中创建、修改、构建和测试项目。不要只把所有代码打印在聊天窗口中。
+
+遇到非关键设计细节时，请采用合理的企业开发实践并继续执行，不要频繁询问我。遇到无法实际完成的外部依赖时，应提供可运行的本地替代方案，并明确说明限制。
+
+二、技术栈要求
+
+必须使用以下技术：
+
+开发语言：C#
+
+后端框架：ASP.NET Core 8 Web API
+
+ORM：Entity Framework Core 8
+
+数据库：mysql
+mysql数据库是MySQL 5.7 连接配置是Host localhost Port 10010 Databasename local Username root Password root
+缓存：Redis，通过 StackExchange.Redis 封装
+redis在本机是D:\Code\mqttc\Redis-x64-5.0.14.1 
+CQRS：MediatR，严格区分 Command、Query 和 Handler
+
+依赖注入：Autofac，采用模块化注册
+
+参数校验：FluentValidation，通过 MediatR 管道统一执行
+
+对象映射：AutoMapper，使用独立 Profile
+
+身份认证：JWT Bearer
+
+API 文档：Swagger / OpenAPI，支持 JWT Bearer 授权
+
+日志：Serilog，使用结构化日志
+
+文件存储：抽象文件存储接口，提供本地磁盘实现
+
+邮件通知：抽象邮件服务接口，提供控制台或内存模拟实现
+
+测试：xUnit，配合适当的测试替身
+
+版本管理：Git
+
+配置：appsettings.json、appsettings.Development.json、环境变量
+
+所有 NuGet 包应选择与 .NET 8 兼容的稳定版本，并确保包之间不存在明显的版本冲突。不要使用预览版或不必要的过时 API。
+
+Redis、mysql、JWT 等配置不得硬编码在业务代码中。
+
+三、项目架构
+
+采用清晰的分层架构，建议创建以下项目：
+
+LeaveApproval.sln
+
+src/
+LeaveApproval.Api/
+Controllers/
+Filters/
+Middleware/
+Extensions/
+Program.cs
+appsettings.json
+
+LeaveApproval.Application/
+Common/
+Behaviors/
+Exceptions/
+Interfaces/
+Models/
+Features/
+Auth/
+LeaveRequests/
+Commands/
+Queries/
+Approvals/
+Commands/
+Queries/
+WorkflowConfigs/
+Commands/
+Queries/
+DTOs/
+Validators/
+Mappings/
+DependencyInjection/
+
+LeaveApproval.Domain/
+Entities/
+Enums/
+ValueObjects/
+Exceptions/
+
+LeaveApproval.Infrastructure/
+Persistence/
+AppDbContext.cs
+Configurations/
+Repositories/
+Migrations/
+Redis/
+FileStorage/
+Email/
+Logging/
+DependencyInjection/
+
+tests/
+LeaveApproval.UnitTests/
+LeaveApproval.IntegrationTests/
+
+docker-compose.yml
+.gitignore
+README.md
+
+可以在不破坏职责边界的情况下适当调整目录，但必须保持 Domain、Application、Infrastructure 和 API 的职责清晰。
+
+项目依赖原则：
+
+Domain 不依赖其他业务项目。
+
+Application 定义用例、DTO、验证器及基础设施抽象。
+
+Infrastructure 实现数据库、Redis、文件存储和邮件服务。
+
+API 负责 HTTP、JWT 认证、授权入口、请求响应和中间件配置。
+
+Controller 不包含业务逻辑。
+
+Handler 不直接依赖 Controller、HttpContext 或具体基础设施实现。
+
+不允许为了形式而创建大量空接口或无意义的包装类。
+
+四、CQRS 与 MediatR 规范
+
+所有业务操作必须通过 MediatR 执行。
+
+写操作使用 ICommand 或 IRequest<TResponse> 表达，查询使用查询请求表达。每个业务请求必须有独立的 Handler。
+
+至少实现以下请求：
+
+LoginCommand / LoginCommandHandler
+
+SubmitLeaveRequestCommand / SubmitLeaveRequestCommandHandler
+
+ApproveLeaveRequestCommand / ApproveLeaveRequestCommandHandler
+
+RejectLeaveRequestCommand / RejectLeaveRequestCommandHandler
+
+GetLeaveRequestDetailQuery / GetLeaveRequestDetailQueryHandler
+
+GetMyPendingApprovalsQuery / GetMyPendingApprovalsQueryHandler
+
+CreateWorkflowConfigCommand / CreateWorkflowConfigCommandHandler
+
+UpdateWorkflowConfigCommand / UpdateWorkflowConfigCommandHandler
+
+GetWorkflowConfigQuery / GetWorkflowConfigQueryHandler
+
+根据需要增加其他请求，但不要把所有业务逻辑塞进一个 Handler。
+
+Controller 只负责：
+
+接收和绑定 HTTP 请求。
+
+获取必要的认证上下文。
+
+调用 ISender 或 IMediator。
+
+返回合适的 HTTP 状态码和响应对象。
+
+业务规则、审批权限判断、流程状态变更、缓存失效及事务操作必须位于 Application 用例及其依赖的业务服务中。
+
+统一使用 MediatR 管道行为，并按明确的顺序注册：
+
+请求日志管道：记录请求类型、耗时及异常。
+
+FluentValidation 校验管道：自动执行当前请求对应的全部验证器。
+
+可选的事务管道：只用于需要事务的写操作，避免重复开启事务。
+
+请提供至少三个可运行的管道行为，分别为日志、参数校验和事务行为。事务行为应通过明确的请求标记或其他可靠机制识别需要事务的请求，不能对所有查询无差别开启事务。
+
+注意：CQRS 是逻辑职责分离，不要求强行使用两个数据库或消息队列。
+
+五、Autofac 依赖注入
+
+使用 Autofac 作为正式的依赖注入容器。
+
+要求：
+
+在 ASP.NET Core 8 中正确配置 Autofac 服务提供器工厂。
+
+建立 ApiModule、ApplicationModule、InfrastructureModule 或合理的模块划分。
+
+注册 MediatR、Handler、Pipeline Behavior、FluentValidation Validator。
+
+注册 Repository、Redis、邮件服务、文件存储、AutoMapper Profile 和其他必要组件。
+
+正确处理 Scoped、Singleton、Transient 生命周期。
+
+DbContext 和 Repository 不得使用不恰当的 Singleton 生命周期。
+
+Redis 客户端应根据官方推荐方式复用连接。
+
+所有业务层仅依赖接口，不得直接 new 具体基础设施实现。
+
+确保应用启动后能够正常解析全部依赖。
+
+六、身份认证与权限控制
+
+实现 JWT 登录和身份解析。
+
+至少提供：
+
+POST /api/auth/login
+
+登录请求包含用户名和密码，成功后返回 JWT Token、过期时间及必要的用户信息。
+
+JWT 应包含：
+
+sub 或 NameIdentifier：用户 ID。
+
+name：用户名。
+
+role：用户角色。
+
+jti：Token 唯一标识。
+
+使用 ASP.NET Core JWT Bearer 中间件验证 Token 的签名、Issuer、Audience 和有效期。
+
+要求：
+
+除登录及明确允许匿名访问的接口外，业务接口默认需要认证。
+
+Swagger 支持点击 Authorize 后填写 Bearer Token。
+
+编写一个用户身份解析 Filter，在认证成功后从 Claims 中解析用户 ID、用户名和角色，并提供统一的当前用户上下文。
+
+Filter 不负责验证 Token 签名，Token 验证交给 JWT Bearer 中间件。
+
+Handler 通过 ICurrentUserService 获取当前用户，不直接依赖 HttpContext。
+
+禁止从请求 DTO 中信任客户端提交的审批人 ID、当前用户 ID 或角色。
+
+登录密码使用安全的密码哈希方式保存和验证，不得明文存储。
+
+对审批接口进行对象级授权检查，不能只依靠角色判断。
+
+提供至少以下角色：
+
+Employee：普通员工。
+
+Manager：直属领导或部门经理。
+
+Admin：系统管理员。
+
+直属领导和部门经理的实际审批权限还必须根据当前单据、当前流程节点以及节点配置的审批人进行校验。
+
+提供可用于本地测试的初始化用户和测试数据，并在 README 中明确列出测试账号。密码只用于开发环境，生产环境不得使用默认密码。
+
+七、FluentValidation 参数校验
+
+所有请求参数校验统一使用 FluentValidation 和 ValidationBehavior。
+
+禁止在 Handler 中重复编写基本参数校验代码。
+
+至少实现以下校验：
+
+用户名、密码不能为空。
+
+请假开始时间必须早于结束时间。
+
+请假原因不能为空，且长度不能超过指定限制。
+
+请假类型必须是允许的枚举值。
+
+附件数量不得超过配置上限。
+
+附件大小、文件名和文件类型必须符合限制。
+
+审批意见长度不得超过限制。
+
+流程配置至少包含一个有效节点。
+
+节点顺序不能重复，节点审批人不能为空。
+
+同一节点不能包含不合法或重复的审批人配置。
+
+校验失败时统一返回 HTTP 400，并提供结构化错误信息，例如字段名、错误代码和错误描述。
+
+使用统一异常处理中间件处理 ValidationException、业务异常和未知异常，避免每个 Controller 重复处理异常。
+
+注意区分：
+
+参数校验失败：400。
+
+未认证：401。
+
+无权访问：403。
+
+单据不存在：404。
+
+状态冲突、重复审批或流程状态不匹配：409。
+
+未预期系统异常：500。
+
+八、AutoMapper 对象映射
+
+创建独立的 AutoMapper Profile。
+
+至少覆盖：
+
+LeaveRequest -> LeaveRequestDetailDto。
+
+LeaveAttachment -> LeaveAttachmentDto。
+
+ApprovalRecord -> ApprovalRecordDto。
+
+WorkflowConfig -> WorkflowConfigDto。
+
+WorkflowNode -> WorkflowNodeDto。
+
+LeaveRequest -> LeaveRequestListItemDto。
+
+不要在 Handler 中到处使用手动属性赋值完成相同的实体与 DTO 映射。
+
+对于当前用户名称、当前待审批人、附件访问地址等需要组合查询的数据，可以通过查询投影、专门的 DTO 组装逻辑或映射后的补充处理实现。
+
+不要将密码哈希、JWT 密钥、内部敏感字段或不应暴露的导航属性返回给客户端。
+
+九、数据库设计
+
+使用 EF Core Code First，建立实体、EntityTypeConfiguration、DbContext 和 Migration。
+
+至少创建以下实体：
+
+User：用户。
+
+Department：部门。
+
+LeaveRequest：请假单。
+
+LeaveAttachment：请假附件。
+
+WorkflowConfig：审批流程配置。
+
+WorkflowNode：审批流程节点。
+
+LeaveApprovalTask：实际审批任务。
+
+ApprovalRecord：审批操作记录。
+
+字段由你合理设计，但至少包含：
+
+User：
+
+Id
+
+Username
+
+PasswordHash
+
+DisplayName
+
+Email
+
+DepartmentId
+
+DirectManagerId
+
+IsActive
+
+CreatedAt
+
+LeaveRequest：
+
+Id
+
+LeaveNo：业务单号，唯一索引。
+
+ApplicantId
+
+DepartmentId
+
+LeaveType
+
+StartTime
+
+EndTime
+
+Duration
+
+Reason
+
+Status
+
+CurrentNodeId
+
+SubmittedAt
+
+CompletedAt
+
+CreatedAt
+
+UpdatedAt
+
+RowVersion 或其他并发控制字段
+
+LeaveAttachment：
+
+Id
+
+LeaveRequestId
+
+OriginalFileName
+
+StorageKey
+
+ContentType
+
+Size
+
+UploadedBy
+
+CreatedAt
+
+WorkflowConfig：
+
+Id
+
+Name
+
+DepartmentId 或适用范围
+
+Version
+
+IsActive
+
+CreatedAt
+
+UpdatedAt
+
+WorkflowNode：
+
+Id
+
+WorkflowConfigId
+
+NodeOrder
+
+NodeName
+
+ApproverType
+
+ApproverUserId 或其他明确的审批人配置字段
+
+IsRequired
+
+LeaveApprovalTask：
+
+Id
+
+LeaveRequestId
+
+WorkflowNodeId
+
+ApproverUserId
+
+Status
+
+CreatedAt
+
+CompletedAt
+
+ApprovalRecord：
+
+Id
+
+LeaveRequestId
+
+WorkflowNodeId
+
+OperatorId
+
+Action
+
+Comment
+
+FromStatus
+
+ToStatus
+
+CreatedAt
+
+请根据实际需要增加字段，例如流程版本、审批人快照、审计字段和并发令牌。
+
+数据库设计必须明确区分：
+
+流程模板：定义节点和审批人规则。
+
+实际审批任务：记录某一张请假单在每个节点分配给谁。
+
+审批操作记录：记录谁在何时执行了什么操作。
+
+提交请假单时，应冻结本次审批流程的实际节点和审批人快照，避免管理员修改流程配置后影响已经提交的单据。
+
+为关键字段创建合理索引：
+
+LeaveNo 唯一索引。
+
+ApplicantId、CreatedAt。
+
+Status、CurrentNodeId。
+
+ApproverUserId、Status、CreatedAt。
+
+LeaveRequestId、CreatedAt。
+
+合理设置外键、删除行为、精度、长度和唯一约束。
+
+请假时长计算必须明确规则，例如按小时计算并考虑工作日的业务规则；若不实现工作日历，需在 README 中说明本测试版本采用的计算口径。
+
+十、BaseRepository 与 EF Core
+
+封装基础仓储：
+
+IBaseRepository<TEntity>
+BaseRepository<TEntity>
+
+至少提供：
+
+GetByIdAsync。
+
+AddAsync。
+
+Update。
+
+Delete。
+
+ExistsAsync。
+
+Query 或其他受控的查询入口。
+
+要求：
+
+使用异步数据库操作。
+
+查询场景合理使用 AsNoTracking。
+
+禁止把 IQueryable 直接返回给 API 客户端。
+
+复杂业务查询可以通过专用查询仓储实现，不要强迫所有查询都使用通用仓储。
+
+事务边界必须清晰，避免 Repository、Handler 和事务管道重复提交事务。
+
+EF Core 的 DbContext 负责工作单元和数据库事务。
+
+需要同时写入请假单、审批任务和审批记录时，应保证数据库一致性。
+
+正确处理 DbUpdateConcurrencyException 和唯一键冲突。
+
+如使用 Repository 的 SaveChangesAsync，应确保其调用位置与事务管道设计一致。
+
+十一、请假审批流程
+
+核心流程：
+
+申请人提交请假申请
+→ 直属领导审批
+→ 部门经理审批
+→ 审批完成。
+
+支持根据配置启用、停用、调整审批节点和审批人员。
+
+11.1 提交请假申请
+
+接口建议：
+
+POST /api/leave-requests
+
+请求包含：
+
+LeaveType
+
+StartTime
+
+EndTime
+
+Reason
+
+可选的附件信息，或者通过 multipart/form-data 上传多个附件。
+
+提交后执行：
+
+从当前登录用户上下文获取申请人 ID。
+
+验证请假参数及附件。
+
+根据申请人的部门或适用范围获取当前有效流程配置。
+
+校验流程配置有效，存在有效节点及审批人。
+
+创建请假单并生成唯一业务单号。
+
+保存附件元数据和文件。
+
+按当前流程配置生成实际审批任务及审批人快照。
+
+激活第一个节点的待审批任务。
+
+写入提交操作记录。
+
+在数据库事务中保证单据、任务和记录的一致性。
+
+提交成功后，通知第一个节点的待审批人。
+
+返回单据编号、当前状态和必要的业务信息。
+
+不要在数据库事务尚未提交时发送不可撤销的外部通知。
+
+可以通过事务提交后的通知机制或简单的 Outbox 模式实现可靠通知。若采用简化实现，必须处理通知失败与数据库成功之间的不一致问题，并在 README 中说明当前可靠性边界。
+
+11.2 审批同意
+
+接口建议：
+
+POST /api/leave-requests/{id}/approve
+
+请求包含：
+
+Comment：可选审批意见。
+
+执行要求：
+
+根据当前用户获取审批人 ID。
+
+查询单据及当前待审批任务。
+
+校验单据存在。
+
+校验单据处于允许审批的状态。
+
+校验当前用户是该单据当前节点的有效审批人。
+
+校验任务仍为 Pending，防止重复审批。
+
+在事务内完成当前任务、审批记录和单据状态变更。
+
+若存在下一节点，激活下一节点的任务。
+
+如果下一节点存在多个审批人，按照明确的节点规则分配任务；默认采用节点内任一指定审批人完成即可流转的简单策略，并确保其余任务同步失效。
+
+若不存在下一节点，将单据状态更新为 Approved，并记录完成时间。
+
+处理并发审批，确保同一任务不能被成功审批两次。
+
+事务提交后清理相关缓存，并向下一审批人发送邮件；若流程结束则可通知申请人。
+
+同意操作不得允许用户跳过节点，也不得接受客户端传入的下一审批人来决定流程。
+
+11.3 审批驳回
+
+接口建议：
+
+POST /api/leave-requests/{id}/reject
+
+请求包含：
+
+Comment：必填驳回意见。
+
+执行要求：
+
+校验当前用户身份和审批权限。
+
+校验单据当前状态和待审批任务状态。
+
+在事务内将当前任务更新为 Rejected 或其他明确的终态。
+
+将请假单状态更新为 Rejected。
+
+写入完整审批记录及驳回意见。
+
+使该单据其他尚未激活或尚未处理的任务失效。
+
+事务提交后清理详情缓存及相关待办缓存。
+
+通过邮件服务通知申请人驳回结果和驳回意见。
+
+驳回后不得继续流转到后续节点。
+
+11.4 审批状态设计
+
+至少定义以下单据状态：
+
+Draft：草稿，可按实现选择是否开放。
+
+PendingApproval：审批中。
+
+Approved：审批完成。
+
+Rejected：审批驳回。
+
+Cancelled：已取消，可作为扩展。
+
+审批任务至少定义：
+
+Pending
+
+Approved
+
+Rejected
+
+Skipped 或 Cancelled
+
+请明确状态流转规则，并实现集中管理的状态判断逻辑。
+
+十二、审批流程配置
+
+实现简易流程配置管理，不引入 Elsa、Workflow Core 等重型工作流框架。
+
+接口建议：
+
+POST /api/workflow-configs
+PUT /api/workflow-configs/{id}
+GET /api/workflow-configs/{id}
+GET /api/workflow-configs
+
+支持：
+
+创建流程。
+
+修改流程名称和适用范围。
+
+增删节点、调整节点顺序。
+
+为节点配置审批人员。
+
+启用或停用流程。
+
+查询流程配置详情。
+
+要求：
+
+只有 Admin 可以管理流程配置。
+
+流程启用前必须通过校验。
+
+同一适用范围不能存在冲突的有效流程。
+
+已有单据使用的流程版本不得因配置修改而被追溯修改。
+
+已启用且正在被使用的流程不应随意直接修改；可采用新版本发布策略。
+
+审批人员必须存在且处于有效状态。
+
+配置变更需要记录操作人和时间。
+
+默认提供两个节点：
+
+节点一：直属领导审批。
+节点二：部门经理审批。
+
+请同时提供配置示例，展示如何把节点审批人绑定到具体用户，或通过明确的 ApproverType 规则解析直属领导和部门经理。
+
+十三、Redis 缓存封装
+
+定义统一缓存接口，例如：
+
+ICacheService
+
+使用 StackExchange.Redis 实现基础缓存服务，至少包含：
+
+GetAsync<T>。
+
+SetAsync<T>。
+
+RemoveAsync。
+
+RemoveByPrefixAsync，或者使用其他安全的缓存索引失效策略。
+
+缓存键应统一管理，例如：
+
+leave:detail:{leaveRequestId}
+
+leave:pending:{userId}:{page}:{pageSize}:{filterHash}
+
+不要直接使用危险的 Redis KEYS 命令扫描线上全部键。
+
+对于按前缀清理的场景，使用明确维护的键索引、Set 或其他可控方案；或者使用按用户维护的待办缓存版本号实现失效。
+
+13.1 请假详情缓存
+
+GET /api/leave-requests/{id}
+
+返回：
+
+单据基础信息。
+
+申请人信息。
+
+当前审批状态。
+
+完整附件列表。
+
+完整审批操作记录。
+
+当前节点及必要的流程信息。
+
+详情查询优先读取 Redis，缓存未命中时通过 EF Core 查询并映射 DTO，然后写入 Redis。
+
+附件查询只返回授权用户可以访问的附件元数据和安全访问地址，不得将物理磁盘绝对路径暴露给客户端。
+
+设置合理的过期时间。
+
+13.2 我的待审批分页缓存
+
+GET /api/approvals/pending?page=1&pageSize=20
+
+查询条件必须包含当前登录用户 ID，禁止信任客户端传入的审批人 ID。
+
+返回：
+
+Items。
+
+Page。
+
+PageSize。
+
+TotalCount。
+
+缓存键需要包含用户 ID、页码、每页大小及所有会影响结果的过滤条件。
+
+13.3 缓存失效策略
+
+提交、审批通过、驳回、取消等影响流程的操作完成后，清理或失效：
+
+对应请假单详情缓存。
+
+当前审批人的待办缓存。
+
+新激活审批人的待办缓存。
+
+流程结束时申请人可见的相关查询缓存（若实现了该类缓存）。
+
+缓存失效必须发生在数据库事务成功提交之后。
+
+如果 Redis 失效失败，记录异常并提供合理的重试或版本号机制，避免长期返回明显过期的数据。
+
+请在 README 中说明缓存一致性策略和已知边界。
+
+十四、Serilog 结构化日志
+
+集成 Serilog，并配置控制台日志和滚动文件日志。
+
+至少记录：
+
+TraceId 或 CorrelationId。
+
+RequestPath。
+
+当前操作人 ID。
+
+操作人名称。
+
+业务单号 LeaveNo。
+
+MediatR 请求名称。
+
+操作耗时。
+
+操作结果。
+
+异常类型、异常信息和堆栈。
+
+使用 LogContext 或结构化属性记录字段，不要仅拼接成一段字符串。
+
+建议在 MediatR 日志管道中记录业务请求的开始、结束、耗时和异常。
+
+对于提交、审批通过、驳回、流程配置修改等重要业务操作，记录操作人、单据编号、操作类型和结果。
+
+注意：
+
+单据编号可能在 Handler 内才生成，应在业务操作日志中补充记录。
+
+日志中不得记录明文密码、JWT、敏感附件内容或其他不必要的个人信息。
+
+不能把所有请求 DTO 完整序列化写入日志。
+
+未处理异常统一交由异常中间件记录，避免同一异常无意义地重复记录多次。
+
+十五、文件存储服务
+
+定义：
+
+IFileStorageService
+
+提供本地文件存储实现，至少支持：
+
+SaveAsync。
+
+DeleteAsync。
+
+GetReadStreamAsync，或等价的安全读取能力。
+
+要求：
+
+支持一次上传多个附件。
+
+使用随机生成的存储键，不使用用户文件名直接拼接物理路径。
+
+限制单文件大小、总附件数量和允许的文件类型。
+
+防止路径穿越。
+
+原始文件名仅用于显示，不直接作为物理存储路径。
+
+数据库只保存文件元数据和存储键。
+
+文件访问接口需要验证当前用户是否有权查看该单据附件。
+
+如果文件写入成功但数据库事务失败，需要尽可能清理孤立文件，或者提供补偿机制。
+
+如果数据库提交成功但文件通知或后续操作失败，不能无记录地丢失问题。
+
+提供本地磁盘实现即可，不要求接入云存储。
+
+十六、邮件通知服务
+
+定义：
+
+IEmailService
+
+至少包含：
+
+SendAsync。
+
+收件人、主题、正文和必要的业务上下文。
+
+提供模拟实现，将邮件内容写入结构化日志或内存邮件箱，并提供开发环境查询邮件记录的方式。
+
+不得要求配置真实 SMTP 账号才能运行项目。
+
+邮件场景至少包含：
+
+请假申请提交成功，通知第一个审批人。
+
+当前节点审批通过，通知下一审批人。
+
+所有节点审批通过，通知申请人审批完成。
+
+请假申请被驳回，通知申请人并附带驳回意见。
+
+邮件发送失败不能回滚已经成功提交的数据库事务。
+
+请提供可追踪的通知发送结果，并通过重试机制或 Outbox 方案合理处理失败通知。若为了控制测试复杂度而采用简化方案，请明确说明重试能力和可靠性限制。
+
+十七、API 接口清单
+
+至少实现：
+
+认证：
+
+POST /api/auth/login
+
+请假：
+
+POST /api/leave-requests
+GET /api/leave-requests/{id}
+GET /api/leave-requests/my
+POST /api/leave-requests/{id}/approve
+POST /api/leave-requests/{id}/reject
+
+审批：
+
+GET /api/approvals/pending
+
+流程配置：
+
+POST /api/workflow-configs
+PUT /api/workflow-configs/{id}
+GET /api/workflow-configs/{id}
+GET /api/workflow-configs
+
+附件：
+
+GET /api/leave-requests/{id}/attachments/{attachmentId}
+
+所有接口统一使用 DTO，不得直接暴露 EF Core 实体。
+
+请提供合理的请求示例、响应示例、HTTP 状态码及错误响应。
+
+十八、事务、一致性与并发控制
+
+重点实现以下业务一致性：
+
+请假单、审批任务、审批记录在关键操作中保持事务一致性。
+
+两个并发请求同时审批同一任务时，只能有一个成功。
+
+重复提交相同审批操作时，不能重复流转。
+
+数据库提交失败时，不得提前通知审批人。
+
+Redis 失效只能发生在数据库提交成功后。
+
+文件写入、数据库写入和邮件通知之间不存在天然的分布式事务，必须采用合理的补偿、重试或 Outbox 策略。
+
+如果实现 Outbox，至少包含消息类型、业务标识、序列化内容、创建时间、发送状态、尝试次数、下次重试时间及错误信息。
+
+对并发异常、唯一键冲突、缓存异常和邮件发送异常进行适当处理。
+
+不要声称 Redis、mysql、文件系统和邮件服务之间具备不存在的原子性。
+
+对于审批操作，推荐采用数据库事务、任务状态条件更新及乐观并发控制的组合方案。必要时可使用 EF Core 并发令牌或条件更新确保单个任务只能被处理一次。
+
+十九、测试要求
+
+编写 xUnit 测试。
+
+单元测试至少覆盖：
+
+FluentValidation 对非法请假时间的校验。
+
+请假原因为空时校验失败。
+
+审批人无权操作时被拒绝。
+
+非当前节点审批人无法越级审批。
+
+已完成的任务不能重复审批。
+
+审批通过后正确激活下一节点。
+
+最后一个节点通过后单据状态变为 Approved。
+
+驳回后单据状态变为 Rejected。
+
+流程配置缺少审批人时不能启用。
+
+集成测试至少覆盖：
+
+登录并获取 JWT。
+
+使用 JWT 提交请假申请。
+
+查询请假单详情。
+
+直属领导审批通过。
+
+部门经理审批通过。
+
+审批驳回并验证驳回意见。
+
+查询当前用户的待审批列表。
+
+验证缓存失效逻辑。
+
+优先使用真实 mysql/Redis 测试容器或可替代的集成测试环境。若使用 SQLite 或内存实现，应明确说明与 mysql 在事务、索引、并发控制等方面的差异，不得把内存数据库测试等同于 mysql 完整验证。
+
+为复杂外部服务编写可控的测试替身。
+
+二十、部署与运行
+
+提供：
+
+完整 appsettings.json 示例。
+
+开发环境配置示例。
+
+环境变量配置说明。
+
+mysql 数据库初始化或 Migration 执行命令。
+
+Redis 启动说明。
+
+本地开发启动命令。
+
+Docker Compose 配置，用于启动必要的依赖服务。
+
+Windows Server + IIS 部署说明。
+
+Linux + Kestrel + systemd 部署说明。
+
+日志文件位置及常见故障排查方法。
+
+Swagger 访问地址。
+
+测试账号及完整的端到端测试步骤。
+
+应用必须支持通过环境变量配置连接字符串、JWT 密钥、Redis 地址、文件存储目录和日志级别。
+
+不要把生产密钥、真实密码或连接凭据提交到 Git。
+
+二十一、Git 与项目工程化
+
+提供清晰的项目提交建议：
+
+初始化解决方案。
+
+创建分层项目。
+
+实现数据库及基础设施。
+
+实现认证与 CQRS。
+
+实现审批流程。
+
+实现缓存、日志和通知。
+
+添加测试和部署文档。
+
+确保 .gitignore 排除：
+
+bin/
+
+obj/
+
+.vs/
+
+用户本地配置文件。
+
+日志文件。
+
+上传附件。
+
+本地密钥和敏感配置。
+
+项目结构清晰，命名统一，异步方法使用 Async 后缀，正确传递 CancellationToken。
+
+二十二、AI 辅助开发规范
+
+开发过程中允许使用 AI 辅助设计、编码、调试、测试和文档编写，但必须自行验证 AI 生成的结果。
+
+要求：
+
+先检查项目目录及现有代码，再决定创建或修改哪些文件。
+
+先制定实施计划，再按模块开发。
+
+每个模块完成后执行 dotnet build。
+
+修复实际出现的编译错误，而不是仅声称代码正确。
+
+运行单元测试和可运行的集成测试。
+
+检查 MediatR、Autofac、AutoMapper、EF Core 和 Redis 的实际注册方式是否与所选版本兼容。
+
+检查认证、授权、缓存失效、事务及并发逻辑。
+
+不得使用虚构的 NuGet API、虚构的配置项或不存在的类。
+
+不得把未执行的测试描述为已通过。
+
+遇到环境限制时，明确说明哪些检查已完成、哪些尚未完成。
+
+二十三、实施顺序
+
+请按以下阶段执行。
+
+阶段一：分析需求，输出关键业务规则、架构图、数据库 ER 关系和接口清单。
+
+阶段二：创建解决方案、项目引用、NuGet 依赖、Autofac 模块和基础配置。
+
+阶段三：实现 Domain 实体、枚举、EF Core 配置、Migration 和 BaseRepository。
+
+阶段四：实现 JWT、登录接口、当前用户上下文、Filter 和 Swagger 授权。
+
+阶段五：实现 MediatR、CQRS、FluentValidation、AutoMapper 和统一异常处理。
+
+阶段六：实现请假提交、附件保存、审批通过、审批驳回和流程配置。
+
+阶段七：实现 Redis 缓存、Serilog 日志、模拟邮件和通知可靠性处理。
+
+阶段八：实现单元测试和集成测试。
+
+阶段九：执行构建、测试和必要的修复。
+
+阶段十：完善 README、Docker Compose、Windows 部署和 Linux 部署说明。
+
+每个阶段都必须提供实际产物，而不是只描述计划。
+
+如果工作量较大，可以分阶段连续执行，但必须保持项目处于可编译状态。不要为了快速完成而将所有功能集中在一个 Program.cs、Controller 或 Handler 中。
+
+二十四、最终验收标准
+
+完成后逐项检查：
+
+解决方案和全部项目结构完整。
+
+dotnet build 成功。
+
+EF Core Migration 可生成并执行。
+
+Autofac 模块化依赖注入生效。
+
+MediatR 至少具备日志、校验和事务三个管道行为。
+
+Controller 不包含业务逻辑。
+
+FluentValidation 统一校验请求参数。
+
+AutoMapper Profile 独立配置。
+
+JWT 认证与 Swagger Bearer 授权可用。
+
+Filter 能解析当前用户身份。
+
+请假申请支持多个附件。
+
+直属领导审批后流转到部门经理。
+
+部门经理审批通过后单据完成。
+
+驳回操作能保存意见并通知申请人。
+
+流程节点及审批人员可以配置。
+
+已提交单据不受流程模板修改影响。
+
+请假详情使用 Redis 缓存。
+
+待审批分页列表使用 Redis 缓存。
+
+审批流转后正确失效相关缓存。
+
+Serilog 包含操作人、单据编号、耗时和异常信息。
+
+BaseRepository 和 EF Core 异步访问符合规范。
+
+文件存储和邮件服务使用抽象接口。
+
+并发审批、重复操作及越权审批得到防护。
+
+测试覆盖关键业务规则。
+
+README 包含启动、配置、测试及部署步骤。
+
+最终报告如实说明构建和测试结果。
+
+最终请交付完整源代码、数据库迁移、测试代码、配置示例、README 和部署文件，并输出一份验收报告，列出已实现功能、实际执行的构建与测试命令、测试结果、未完成项及其原因。
+
+现在开始执行。首先检查当前工作区，然后按照上述阶段推进，优先确保项目架构正确、业务流程完整、代码能够编译运行，并在每个阶段完成后进行实际验证。
