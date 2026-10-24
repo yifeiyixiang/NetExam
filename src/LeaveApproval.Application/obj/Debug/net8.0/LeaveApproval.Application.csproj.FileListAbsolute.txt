@@ -1,0 +1,15 @@
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\obj\Debug\net8.0\LeaveApproval.Application.csproj.AssemblyReference.cache
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\obj\Debug\net8.0\LeaveApproval.Application.GeneratedMSBuildEditorConfig.editorconfig
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\obj\Debug\net8.0\LeaveApproval.Application.AssemblyInfoInputs.cache
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\obj\Debug\net8.0\LeaveApproval.Application.AssemblyInfo.cs
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\obj\Debug\net8.0\LeaveApproval.Application.csproj.CoreCompileInputs.cache
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\bin\Debug\net8.0\LeaveApproval.Application.deps.json
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\bin\Debug\net8.0\LeaveApproval.Application.dll
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\bin\Debug\net8.0\LeaveApproval.Application.pdb
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\bin\Debug\net8.0\LeaveApproval.Domain.dll
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\bin\Debug\net8.0\LeaveApproval.Domain.pdb
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\obj\Debug\net8.0\LeaveApp.95173A65.Up2Date
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\obj\Debug\net8.0\LeaveApproval.Application.dll
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\obj\Debug\net8.0\refint\LeaveApproval.Application.dll
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\obj\Debug\net8.0\LeaveApproval.Application.pdb
+F:\Merchant\merchant202610\netexam\src\LeaveApproval.Application\obj\Debug\net8.0\ref\LeaveApproval.Application.dll

@@ -7,22 +7,23 @@ namespace LeaveApproval.Domain.Services;
 public static class WorkflowConfigPolicy
 {
     /// <returns>校验错误列表，为空表示通过。</returns>
-    public static List<string> ValidateForActivation(IReadOnlyCollection<WorkflowNode> nodes)
+    public static List<string> ValidateForActivation(IEnumerable<WorkflowNode> nodes)
     {
         var errors = new List<string>();
+        var nodeList = nodes.ToList();
 
-        if (nodes.Count == 0)
+        if (nodeList.Count == 0)
         {
             errors.Add("流程至少需要配置一个审批节点");
             return errors;
         }
 
-        if (nodes.Select(n => n.NodeOrder).Distinct().Count() != nodes.Count)
+        if (nodeList.Select(n => n.NodeOrder).Distinct().Count() != nodeList.Count)
         {
             errors.Add("节点顺序不能重复");
         }
 
-        foreach (var node in nodes)
+        foreach (var node in nodeList)
         {
             if (node.NodeOrder <= 0)
             {
