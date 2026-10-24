@@ -1,0 +1,6 @@
+{
+  "LeaveApproval.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "F:\\Merchant\\merchant202610\\netexam\\src\\LeaveApproval.Api",
+  "LeaveApproval.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "F:\\Merchant\\merchant202610\\netexam\\src\\LeaveApproval.Application",
+  "LeaveApproval.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "F:\\Merchant\\merchant202610\\netexam\\src\\LeaveApproval.Domain",
+  "LeaveApproval.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "F:\\Merchant\\merchant202610\\netexam\\src\\LeaveApproval.Infrastructure"
+}
